@@ -1,3 +1,4 @@
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -6,11 +7,12 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * Deterministic Finite State Automaton.
- * This class represents a state machine with state labels of type S (probably)
- * integers and an alphabet of type A (usually characters)
+ * Deterministic Finite State Automaton. This class represents a state machine
+ * with state labels of type S (probably) integers and an alphabet of type A
+ * (usually characters)
  */
 public class DFA<S, A> {
+
     private final Set<S> states;
     private final Set<A> alphabet;
     private final Map<S, Map<A, S>> delta;
@@ -24,7 +26,7 @@ public class DFA<S, A> {
             S startState,
             Set<S> acceptStates,
             S deadState) {
-        
+
         this.states = states;
         this.alphabet = alphabet;
         this.delta = delta;
@@ -63,7 +65,9 @@ public class DFA<S, A> {
         return delta.get(state).get(symbol);
     }
 
-    /** Is the given state an accepting state? */
+    /**
+     * Is the given state an accepting state?
+     */
     public boolean isAccepting(S state) {
         return acceptStates.contains(state);
     }
@@ -87,12 +91,13 @@ public class DFA<S, A> {
     }
 
     /**
-     * Returns the minimal DFA with the same language using Hopcroft's Algorithm.
+     * Returns the minimal DFA with the same language using Hopcroft's
+     * Algorithm.
      */
     public DFA<Set<S>, A> minimize() {
         Set<Set<S>> P = new HashSet<>();  // P = Set of partitions
         Queue<Set<S>> W = new LinkedList<>();  // W = Worklist
-        
+
         // Initialize P = {Accepting states, Non-accepting}
         Set<S> accepting = this.acceptStates();
         Set<S> nonAccepting = this.states();
@@ -119,7 +124,7 @@ public class DFA<S, A> {
 
                     // If the test set splits Y...
                     if (!intersection.isEmpty() && !difference.isEmpty()) {
-                        
+
                         // Replace Y with the split set
                         P.remove(Y);
                         P.add(intersection);
@@ -143,10 +148,10 @@ public class DFA<S, A> {
         // Construct new delta function on minimized states.
         Map<Set<S>, Map<A, Set<S>>> newDelta = new HashMap<>();
         for (Set<S> p : P) {
-            
+
             Map<A, Set<S>> pMap = new HashMap<>();
             S element = p.iterator().next(); // Arbitrary element of p
-            
+
             for (A a : alphabet) {
                 S destination = transition(element, a);
                 for (Set<S> q : P) {
@@ -190,8 +195,9 @@ public class DFA<S, A> {
         return new DFA<>(P, this.alphabet, newDelta, newStartState, newAcceptStates, newDeadState);
     }
 
-    /** Get the set of states in the DFA that send to some state in
-     *  a given destination set via a given transition symbol.
+    /**
+     * Get the set of states in the DFA that send to some state in a given
+     * destination set via a given transition symbol.
      */
     private Set<S> getSourceStates(Set<S> destinationSet, A transition) {
         Set<S> result = new HashSet<>();
@@ -207,7 +213,9 @@ public class DFA<S, A> {
         return result;
     }
 
-    /** Returns an equivalent DFA where the states are integers */
+    /**
+     * Returns an equivalent DFA where the states are integers
+     */
     public DFA<Integer, A> denumerate() {
         Map<S, Integer> dictionary = new HashMap<>();
 
@@ -248,10 +256,51 @@ public class DFA<S, A> {
         StringBuilder sb = new StringBuilder();
 
         for (S state : states) {
-            sb.append(state.toString()).append(":  ");
+            if (state == this.startState) {
+                sb.append('>');
+            }
+
+            sb.append(state.toString());
+            if (this.acceptStates.contains(state)) {
+                sb.append('*');
+            }
+            sb.append(":  ");
             Map<A, S> m = delta.get(state);
             for (A a : alphabet) {
-                sb.append(a.toString()).append( " -> ").append(m.get(a)).append( ",  ");
+                sb.append(a.toString()).append(" -> ").append(m.get(a)).append(",  ");
+            }
+
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Convert to a string without showing deadState
+     */
+    public String toStringNoDead() {
+        StringBuilder sb = new StringBuilder();
+
+        for (S state : states) {
+             if (state == this.startState) {
+                sb.append('>');
+            }
+
+            if (state == this.deadState) {
+                continue;
+            }
+             sb.append(state.toString());
+            if (this.acceptStates.contains(state)) {
+                sb.append('*');
+            }
+            sb.append(":  ");
+            Map<A, S> m = delta.get(state);
+            for (A a : alphabet) {
+                if (m.get(a) == this.deadState) {
+                    continue;
+                }
+                sb.append(a.toString()).append(" -> ").append(m.get(a)).append(",  ");
             }
 
             sb.append("\n");
@@ -282,6 +331,6 @@ public class DFA<S, A> {
 
         System.out.println(mini);
         System.out.println(miniNumbered);
-        // System.out.println(miniNumbered.deadState);
+        System.out.println(miniNumbered.toStringNoDead());
     }
 }
