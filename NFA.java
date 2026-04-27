@@ -132,7 +132,9 @@ public class NFA<S, A> {
         return result;
     }
 
-    /** Subset construction algorithm to simulate NFA with DFA */
+    /**
+     * Subset construction algorithm to simulate NFA with DFA
+     */
     public DFA<Set<S>, A> toDFA() {
         final Set<S> DEAD = Collections.emptySet();
 
@@ -209,7 +211,9 @@ public class NFA<S, A> {
         return sb.toString();
     }
 
-    /** Utility class to for easier design/construction of an NFA */
+    /**
+     * Utility class to for easier design/construction of an NFA
+     */
     public static class NFABuilder<S, A> {
 
         private final Set<S> states;
@@ -228,27 +232,37 @@ public class NFA<S, A> {
             acceptStates = new HashSet<>();
         }
 
-        /** Add an NFA state */
+        /**
+         * Add an NFA state
+         */
         public void addState(S state) {
             this.states.add(state);
         }
 
-        /** Add all of the given states to the set of states */
+        /**
+         * Add all of the given states to the set of states
+         */
         public void addStates(Collection<S> states) {
             this.states.addAll(states);
         }
 
-        /** Set the given state as the start state */
+        /**
+         * Set the given state as the start state
+         */
         public void setStartState(S start) {
             this.startState = start;
         }
 
-        /** Add the given transition to the builder */
+        /**
+         * Add the given transition to the builder
+         */
         public void addTransition(S from, A symbol, S to) {
             addTransition(from, symbol, Set.of(to));
         }
 
-        /** Add all transitions to the configuration set from the given state */
+        /**
+         * Add all transitions to the configuration set from the given state
+         */
         public void addTransition(S from, A symbol, Collection<S> to) {
             Map<A, Set<S>> transitions = delta.getOrDefault(from, new HashMap<>());
             Set<S> trans = transitions.getOrDefault(symbol, new HashSet<>());
@@ -257,62 +271,82 @@ public class NFA<S, A> {
             delta.put(from, transitions);
         }
 
-        /** Add an epsilon transition between the given nodes */
+        /**
+         * Add an epsilon transition between the given nodes
+         */
         public void addEpsilonTransition(S from, S to) {
             addEpsilonTransition(from, Set.of(to));
         }
 
-        /** Add epsilon transitions from a source to multiple destinations */
+        /**
+         * Add epsilon transitions from a source to multiple destinations
+         */
         public void addEpsilonTransition(S from, Collection<S> to) {
             Set<S> epDestinations = this.epsilonTransitions.getOrDefault(from, new HashSet<>());
             epDestinations.addAll(to);
             this.epsilonTransitions.put(from, epDestinations);
         }
 
-        /** Set the given state as an accept state */
+        /**
+         * Set the given state as an accept state
+         */
         public void setStateAsAccept(S state) {
             this.acceptStates.add(state);
         }
 
-        /** Add all the states to the set of accept states */
+        /**
+         * Add all the states to the set of accept states
+         */
         public void setStatesAsAccept(Collection<S> states) {
             this.acceptStates.addAll(states);
         }
 
-        /** Return the built NFA */
+        /**
+         * Return the built NFA
+         */
         public NFA<S, A> toNFA() {
-            NFA<S,A> n = new NFA<>(this.states, this.alphabet, this.delta, this.epsilonTransitions, this.startState, this.acceptStates);
+            NFA<S, A> n = new NFA<>(this.states, this.alphabet, this.delta, this.epsilonTransitions, this.startState, this.acceptStates);
             //System.out.println(n.states);
             return n;
         }
     }
 
     public static void main(String[] args) {
-        Set<Character> alpha = new HashSet<>(3);
-        alpha.add('a');
-        alpha.add('b');
-        alpha.add('c');
+        Set<Character> alpha = Set.of('a', 'b', 'c');
+        Set<Integer> states = Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-        NFABuilder<Integer, Character> bld = new NFABuilder<>(alpha);
-        bld.addStates(Set.of(0,1,2,3));
-        bld.addTransition(1, 'a', 2);
-        bld.addEpsilonTransition(0, 1);
-        bld.addEpsilonTransition(0, 3);
-        bld.addEpsilonTransition(2, 3);
-        bld.addEpsilonTransition(2, 1);
+        NFABuilder<Integer, Character> builder = new NFABuilder<>(alpha);
 
-        bld.setStartState(0);
-        bld.setStateAsAccept(3);
+        builder.addStates(states);
+        builder.addTransition(0, 'a', 1);
+        builder.addTransition(4, 'b', 5);
+        builder.addTransition(6, 'c', 7);
 
-        NFA<Integer, Character> nfa = bld.toNFA();
+        builder.addEpsilonTransition(1,2);
+        builder.addEpsilonTransition(2, 3);
+        builder.addEpsilonTransition(3, 4);
+        builder.addEpsilonTransition(3, 6);
+        builder.addEpsilonTransition(5, 8);
+        builder.addEpsilonTransition(7, 8);
+        builder.addEpsilonTransition(8, 9);
+        builder.addEpsilonTransition(2, 9);
+        builder.addEpsilonTransition(8, 3);
 
+        builder.setStartState(0);
+        builder.setStateAsAccept(9);
+        
+        NFA<Integer, Character> nfa = builder.toNFA();
+
+        System.out.println("Original NFA");
         System.out.println(nfa);
 
-        System.out.println("\n\n");
-
         DFA<Set<Integer>, Character> dfa = nfa.toDFA();
-        System.out.println(dfa);
+        System.out.println("Simulating DFA");
+        System.out.println(dfa.denumerate().toStringNoDead());
 
-        System.out.println(dfa.denumerate());
+        DFA<Integer, Character> minimalDFA = dfa.minimize().denumerate();
+        System.out.println("Fully Minimized DFA");
+        System.out.println(minimalDFA.toStringNoDead());
+
     }
 }
